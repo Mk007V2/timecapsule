@@ -1,3 +1,8 @@
+#added
+.vscode/
+API/time_capsules.db
+venv
+
 # Logs
 logs
 *.log

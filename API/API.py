@@ -27,46 +27,46 @@ log = logging.getLogger(__name__)
 load_dotenv()
 log.info(".env file loaded.")
 
-# --- Flask application Configuration ---
-application = Flask(__name__)
+# --- Flask app Configuration ---
+app = Flask(__name__)
 
 # Configure SQLite database
 # Using a relative path for the database file
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'time_capsules.db')
-application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Suppress a warning
-log.info(f"SQLALCHEMY_DATABASE_URI set to: {application.config['SQLALCHEMY_DATABASE_URI']}")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'time_capsules.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Suppress a warning
+log.info(f"SQLALCHEMY_DATABASE_URI set to: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
 
 # Configure file upload directory
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Create upload directory if it doesn't exist
-application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-application.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Max upload size (e.g., 16MB)
-log.info(f"UPLOAD_FOLDER set to: {application.config['UPLOAD_FOLDER']}")
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Max upload size (e.g., 16MB)
+log.info(f"UPLOAD_FOLDER set to: {app.config['UPLOAD_FOLDER']}")
 
 
 # Configure email sending
 # Use environment variables for sensitive info
-application.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com') # Example: Gmail SMTP server
-application.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587)) # Example: Gmail TLS port
-application.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-application.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
-application.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') # Your email address
-application.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') # Your email password or application password
-application.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', application.config['MAIL_USERNAME'])
-log.info(f"Email configuration loaded. MAIL_SERVER: {application.config['MAIL_SERVER']}, MAIL_USERNAME: {application.config['MAIL_USERNAME']}")
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com') # Example: Gmail SMTP server
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587)) # Example: Gmail TLS port
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') # Your email address
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') # Your email password or app password
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', app.config['MAIL_USERNAME'])
+log.info(f"Email configuration loaded. MAIL_SERVER: {app.config['MAIL_SERVER']}, MAIL_USERNAME: {app.config['MAIL_USERNAME']}")
 
 
 # Configure APScheduler
-application.config['SCHEDULER_API_ENABLED'] = False # Disable the built-in API endpoints
+app.config['SCHEDULER_API_ENABLED'] = False # Disable the built-in API endpoints
 scheduler = APScheduler()
 log.info("APScheduler initialized.")
 
 
 # Initialize extensions
-db = SQLAlchemy(application)
-CORS(application) # Enable CORS for all routes
+db = SQLAlchemy(app)
+CORS(app) # Enable CORS for all routes
 log.info("SQLAlchemy and CORS initialized.")
 
 
@@ -110,7 +110,7 @@ def send_scheduled_emails():
     """
     # This log message indicates the function is being called
     log.info("send_scheduled_emails job started.")
-    with application.application_context():
+    with app.app_context():
         # Use timezone-aware datetime for comparison
         now_utc = datetime.now(timezone.utc)
         # print(f"Scheduler running at UTC: {now_utc.isoformat()}") # Keep this for debugging if needed
@@ -149,11 +149,11 @@ def send_email(capsule):
     """
     Sends an email for a given capsule object.
     """
-    if not application.config.get('MAIL_USERNAME') or not application.config.get('MAIL_PASSWORD'):
+    if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
         raise EnvironmentError("Email credentials not configured. Cannot send email.")
 
     msg = MIMEMultipart()
-    msg['From'] = application.config['MAIL_DEFAULT_SENDER']
+    msg['From'] = app.config['MAIL_DEFAULT_SENDER']
     msg['To'] = capsule.recipient_email
     msg['Subject'] = capsule.subject
 
@@ -164,7 +164,7 @@ def send_email(capsule):
     if capsule.attachment_path and os.path.exists(capsule.attachment_path):
         try:
             with open(capsule.attachment_path, 'rb') as f:
-                part = MIMEBase('applicationlication', 'octet-stream')
+                part = MIMEBase('application', 'octet-stream')
                 part.set_payload(f.read())
             encoders.encode_base64(part)
             # Use the original filename for the attachment in the email
@@ -182,20 +182,20 @@ def send_email(capsule):
 
     try:
         # Use a context manager for the SMTP server
-        with smtplib.SMTP(application.config['MAIL_SERVER'], application.config['MAIL_PORT']) as server:
+        with smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT']) as server:
             server.ehlo() # Can be omitted
-            if application.config['MAIL_USE_TLS']:
+            if app.config['MAIL_USE_TLS']:
                  server.starttls() # Secure the connection
                  server.ehlo() # Can be omitted
 
-            if application.config['MAIL_USE_SSL']:
+            if app.config['MAIL_USE_SSL']:
                  # If using SSL, need a different server object
-                 server = smtplib.SMTP_SSL(application.config['MAIL_SERVER'], application.config['MAIL_PORT'])
+                 server = smtplib.SMTP_SSL(app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
 
 
-            server.login(application.config['MAIL_USERNAME'], application.config['MAIL_PASSWORD'])
+            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
             text = msg.as_string()
-            server.sendmail(application.config['MAIL_DEFAULT_SENDER'], capsule.recipient_email, text)
+            server.sendmail(app.config['MAIL_DEFAULT_SENDER'], capsule.recipient_email, text)
             # server.quit() # Not needed with context manager
 
         log.info("Email sent successfully!")
@@ -205,7 +205,7 @@ def send_email(capsule):
 
 # --- API Endpoints ---
 
-@application.route('/api/capsules', methods=['POST'])
+@app.route('/api/capsules', methods=['POST'])
 def create_capsule():
     """
     Creates a new time capsule.
@@ -232,9 +232,9 @@ def create_capsule():
             # print(f"Received send_datetime_str: {send_datetime_str}") # Keep for debugging
             # print(f"Parsed send_datetime_local: {send_datetime_local}") # Keep for debugging
 
-            # Simple applicationroach: assume local time and convert to UTC
-            # A more robust applicationroach would involve sending timezone info from frontend
-            local_timezone_name = application.config.get('LOCAL_TIMEZONE', 'UTC')
+            # Simple approach: assume local time and convert to UTC
+            # A more robust approach would involve sending timezone info from frontend
+            local_timezone_name = app.config.get('LOCAL_TIMEZONE', 'UTC')
             try:
                  local_timezone = pytz.timezone(local_timezone_name)
             except pytz.UnknownTimeZoneError:
@@ -277,7 +277,7 @@ def create_capsule():
             # Secure the filename and generate a unique name to prevent conflicts
             original_filename = secure_filename(attachment_file.filename)
             unique_filename = str(uuid.uuid4()) + '_' + original_filename
-            file_path = os.path.join(application.config['UPLOAD_FOLDER'], unique_filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
 
             try:
                 attachment_file.save(file_path)
@@ -335,7 +335,7 @@ def create_capsule():
         # Return a generic error message for unexpected errors
         return jsonify({'detail': f'An internal error occurred: {e}'}), 500
 
-@application.route('/api/capsules', methods=['GET'])
+@app.route('/api/capsules', methods=['GET'])
 def get_capsules():
     """
     Retrieves all time capsules.
@@ -348,7 +348,7 @@ def get_capsules():
         log.error(f"Error fetching capsules: {e}")
         return jsonify({'detail': 'Failed to retrieve capsules.'}), 500
 
-@application.route('/api/capsules/<int:capsule_id>', methods=['DELETE'])
+@app.route('/api/capsules/<int:capsule_id>', methods=['DELETE'])
 def delete_capsule(capsule_id):
     """
     Deletes a specific time capsule by ID.
@@ -393,7 +393,7 @@ def delete_capsule(capsule_id):
         return jsonify({'detail': 'Failed to delete capsule.'}), 500
 
 # --- Endpoint to Serve Attachments ---
-@application.route('/api/capsules/<int:capsule_id>/attachment', methods=['GET'])
+@app.route('/api/capsules/<int:capsule_id>/attachment', methods=['GET'])
 def download_attachment(capsule_id):
     """
     Serves the attachment file for a specific capsule ID.
@@ -423,7 +423,7 @@ def download_attachment(capsule_id):
         # Get the absolute path of the stored file
         abs_attachment_path = os.path.abspath(capsule.attachment_path)
         # Get the absolute path of the upload folder
-        abs_upload_folder = os.path.abspath(application.config['UPLOAD_FOLDER'])
+        abs_upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
 
         log.info(f"Attachment download: Absolute attachment path: {abs_attachment_path}")
         log.info(f"Attachment download: Absolute upload folder: {abs_upload_folder}")
@@ -454,18 +454,18 @@ def download_attachment(capsule_id):
 
 
 # --- Error Handlers ---
-@application.errorhandler(404)
+@app.errorhandler(404)
 def not_found_error(error):
     # Use error.description if available (set by abort)
     log.warning(f"404 Not Found: {error.description}")
     return jsonify({'detail': error.description or 'Not Found'}), 404
 
-@application.errorhandler(405)
+@app.errorhandler(405)
 def method_not_allowed_error(error):
     log.warning(f"405 Method Not Allowed: {error}")
     return jsonify({'detail': 'Method Not Allowed'}), 405
 
-@application.errorhandler(500)
+@app.errorhandler(500)
 def internal_error(error):
     db.session.rollback() # Ensure session is clean on internal errors
     log.error(f"500 Internal Server Error: {error}")
@@ -473,9 +473,9 @@ def internal_error(error):
 
 # --- Setup and Running ---
 if __name__ == '__main__':
-    log.info("applicationlication starting...")
+    log.info("application starting...")
     # Create database tables if they don't exist
-    with application.application_context():
+    with app.app_context():
         log.info("Checking database tables...")
         # Check if the 'error_message' column exists and add it if not
         # This is a simple migration strategy for adding a new column
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     # Start the scheduler
     # Configure the job to run, e.g., every 5 minutes
     try:
-        scheduler.init_application(application) # Initialize scheduler with the application
+        scheduler.init_app(app) # Initialize scheduler with the app
         # The scheduler trigger is set to run every 1 minute for testing purposes.
         # You might want to adjust this interval in a production environment.
         scheduler.add_job(id='send_emails_job', func=send_scheduled_emails, trigger='interval', minutes=1)
@@ -515,6 +515,6 @@ if __name__ == '__main__':
 
     # Run the Flask development server
     # In production, use a production-ready WSGI server like Gunicorn or uWSGI
-    log.info("Starting Flask applicationlication...")
-    application.run(debug=True, host='0.0.0.0', port=5000)
+    log.info("Starting Flask application...")
+    app.run(debug=True, host='0.0.0.0', port=5078)
 

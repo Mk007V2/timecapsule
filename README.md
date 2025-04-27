@@ -1,4 +1,8 @@
 # Timecapsule
+### Currently deployed and running at 
+#### Netlify, front-end: https://sparkling-buttercream-f02aae.netlify.app/ 
+#### PythonAnyWhere, back-end (API): https://mk007v2.pythonanywhere.com/api/capsules
+#### This is currently sending emails from my personal email account.
 ## Description
 The Time Capsule App is a web application that allows users to compose messages and schedule them to be sent to a specified email address at a future date and time. It serves as a digital time capsule, enabling users to send thoughts, memories, or files to themselves or others in the future.
 
@@ -26,8 +30,8 @@ I have used Gemini 2.5 Flash to write the most of the code here, so the code can
 - Quick-fill button for setting the send date/time to the current time + 1 minute.
 
 ### Stack
-Implemented API on Python Flask, which is running on port 5078 by default.
-Implemented web page on React, styled using TailWindCSS.
+API on Python Flask, which is running on port 5078 by default. It was suggested that Flask would be the best and easiest option to implementing an API from scratch.
+Web app on React, styled using TailWindCSS. I already had some experience with React, so I chose it. It could also be helpful for writing an iOS app.
 
 ### UI
 Designed using Gemini and TailWindCSS for modern looks.
@@ -66,9 +70,8 @@ MAIL_USE_TLS=True
 MAIL_USE_SSL=False
 MAIL_USERNAME=your_email@gmail.com
 MAIL_PASSWORD=your_generated_app_password # Use a Gmail App Password
-LOCAL_TIMEZONE=Etc/GMT-5 # Replace with your server's local timezone (e.g., Asia/Almaty)
 ```
-Replace MAIL_USERNAME, MAIL_PASSWORD with your own login details. Also replace Etc/GMT-5 with your local timezone(Currently set to Kazakhstan time)
+Replace MAIL_USERNAME, MAIL_PASSWORD with your own login credentials.
 
 #### 2.3 Run python code
 ```

@@ -4,8 +4,8 @@ import { AlertCircle, CheckCircle, Clock, Trash2, Plus, Send, Paperclip, X, Down
 // --- Configuration ---
 // IMPORTANT: Replace 'localhost' with your computer's local IP address
 // when accessing from other devices on your network (like your phone).
-// Example: 'http://192.168.1.100:5000/api'
-const API_BASE_URL = `http://localhost:5078/api`; // Use template literal for easier IP change
+// Example: 'http://192.168.1.100:5078/api'
+const API_BASE_URL = `https://mk007v2.pythonanywhere.com/api`; // Use template literal for easier IP change
 
 // Simple Modal Component
 const Modal = ({ isOpen, onClose, title, children }) => {

@@ -241,32 +241,35 @@ def create_capsule():
 
         # Validate and parse send_datetime
         try:
-            # Assume frontend sends datetime-local format which isYYYY-MM-DDTHH:mm
-            # We need to parse it and store it as UTC
+            # Attempt to parse the datetime string.
+            # datetime.fromisoformat can handle YYYY-MM-DDTHH:mm, YYYY-MM-DDTHH:mm:ss,
+            # YYYY-MM-DDTHH:mm:ss.ffffff, and versions with timezone info (+HH:MM or Z).
+            # The error suggests the frontend is sending YYYY-MM-DDTHH:mm:ss.ffffffZ
             send_datetime_local = datetime.fromisoformat(send_datetime_str)
-            # print(f"Received send_datetime_str: {send_datetime_str}") # Keep for debugging
-            # print(f"Parsed send_datetime_local: {send_datetime_local}") # Keep for debugging
+            log.info(f"Received send_datetime_str: {send_datetime_str}")
+            log.info(f"Parsed send_datetime_local (before timezone): {send_datetime_local}")
 
-            # Simple approach: assume local time and convert to UTC
-            # A more robust approach would involve sending timezone info from frontend
-            local_timezone_name = app.config.get('LOCAL_TIMEZONE', 'UTC')
-            try:
-                 local_timezone = pytz.timezone(local_timezone_name)
-            except pytz.UnknownTimeZoneError:
-                 log.warning(f"Unknown timezone '{local_timezone_name}'. Defaulting to UTC.")
-                 local_timezone = pytz.timezone('UTC')
+            # If the parsed datetime is timezone-aware (due to 'Z' or offset), convert it directly to UTC
+            if send_datetime_local.tzinfo is not None and send_datetime_local.tzinfo.utcoffset(send_datetime_local) is not None:
+                 send_datetime_utc = send_datetime_local.astimezone(timezone.utc)
+                 log.info(f"Parsed datetime was timezone-aware. Converted to UTC: {send_datetime_utc}")
+            else:
+                # If the parsed datetime is naive, assume it's in the LOCAL_TIMEZONE
+                local_timezone_name = app.config.get('LOCAL_TIMEZONE', 'UTC')
+                try:
+                     local_timezone = pytz.timezone(local_timezone_name)
+                except pytz.UnknownTimeZoneError:
+                     log.warning(f"Unknown timezone '{local_timezone_name}'. Defaulting to UTC for naive datetime.")
+                     local_timezone = pytz.timezone('UTC')
 
-            send_datetime_aware_local = local_timezone.localize(send_datetime_local)
-            send_datetime_utc = send_datetime_aware_local.astimezone(timezone.utc)
-
-            # print(f"Assumed local timezone: {local_timezone_name}") # Keep for debugging
-            # print(f"Localized local datetime: {send_datetime_aware_local}") # Keep for debugging
-            # print(f"Converted send_datetime_utc: {send_datetime_utc}") # Keep for debugging
+                send_datetime_aware_local = local_timezone.localize(send_datetime_local)
+                send_datetime_utc = send_datetime_aware_local.astimezone(timezone.utc)
+                log.info(f"Parsed datetime was naive. Assumed local timezone: {local_timezone_name}. Converted to UTC: {send_datetime_utc}")
 
 
-            # Check if date is in the future
+            # Check if date is in the future (using the correctly converted UTC time)
             now_utc = datetime.now(timezone.utc) # Use timezone-aware datetime
-            # print(f"Current UTC time: {now_utc}") # Keep for debugging
+            log.info(f"Current UTC time: {now_utc}")
             # This check is primarily for immediate feedback in the API response
             # The scheduler's comparison is the final authority for sending
             if send_datetime_utc <= now_utc:
@@ -275,9 +278,12 @@ def create_capsule():
                  # return jsonify({'detail': 'Sending date must be in the future.'}), 400
 
 
-        except ValueError:
-            log.error(f"ValueError parsing send_datetime: {send_datetime_str}")
-            return jsonify({'detail': 'Invalid send_datetime format. UseYYYY-MM-DDTHH:mm.'}), 400
+        except ValueError as e:
+            log.error(f"ValueError parsing send_datetime: {send_datetime_str}. Error: {e}")
+            return jsonify({'detail': f'Invalid send_datetime format: {send_datetime_str}. Expected YYYY-MM-DDTHH:mm or a valid ISO 8601 string.'}), 400
+        except Exception as e:
+            log.error(f"An unexpected error occurred during date parsing: {e}")
+            return jsonify({'detail': f'An internal error occurred during date processing: {e}'}), 500
 
 
         attachment_path = None

@@ -1,6 +1,8 @@
-FlaskFlask-SQLAlchemy
+Flask
+Flask-SQLAlchemy
 Flask-APScheduler
 Flask-Cors
 python-dotenv
 pytz
 werkzeug
+gunicorn

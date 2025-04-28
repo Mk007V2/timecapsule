@@ -29,6 +29,11 @@ I have used Gemini 2.5 Flash to write the most of the code here, so the code can
 
 - Quick-fill button for setting the send date/time to the current time + 1 minute.
 
+## Limitations
+1. It is currently sending emails from a personal email address by design. Thus, this can not be used too often or by many people.
+2. File names need to be without spaces, and in English.
+3. Using local storage, S3 could be used to get more space.
+
 ### Stack
 API on Python Flask, which is running on port 5078 by default. It was suggested that Flask would be the best and easiest option to implementing an API from scratch.
 Web app on React, styled using TailWindCSS. I already had some experience with React, so I chose it. It could also be helpful for writing an iOS app.

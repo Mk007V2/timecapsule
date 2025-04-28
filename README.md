@@ -1,7 +1,7 @@
 # Timecapsule
 ### Currently deployed and running at 
 #### Netlify, front-end: https://sparkling-buttercream-f02aae.netlify.app/ 
-#### PythonAnyWhere, back-end (API): https://mk007v2.pythonanywhere.com/api/capsules
+#### PythonAnyWhere, back-end (API): https://timecapsule-production.up.railway.app//api/capsules
 #### This is currently sending emails from my personal email account.
 ## Description
 The Time Capsule App is a web application that allows users to compose messages and schedule them to be sent to a specified email address at a future date and time. It serves as a digital time capsule, enabling users to send thoughts, memories, or files to themselves or others in the future.

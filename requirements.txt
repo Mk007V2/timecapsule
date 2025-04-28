@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-APScheduler
+Flask-Cors
+python-dotenv
+pytz
+werkzeug
